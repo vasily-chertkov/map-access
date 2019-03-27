@@ -96,4 +96,5 @@ func synchro(wClients, rClients int) {
 }
 
 func main() {
+	fmt.Println("Main doesn't do anything. Run\ngo test -bench-.")
 }
