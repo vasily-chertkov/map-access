@@ -1,6 +1,6 @@
 # map-access
 
-Test access to map using mutex of dedicated routine with channels
+Test access to map using mutex vs using dedicated routine with channels.
 
 Clone repo:
 
