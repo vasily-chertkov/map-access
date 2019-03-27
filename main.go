@@ -65,6 +65,7 @@ func dedicated(wClients, rClients int) {
 				key:   fmt.Sprintf("key0"),
 				value: make(chan string, 1),
 			}
+			read <- rr
 			_ = <-rr.value
 		}()
 	}
