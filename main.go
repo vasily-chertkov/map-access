@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"sync"
-	"time"
 )
 
 type writeRequest struct {
@@ -18,7 +16,7 @@ type readRequest struct {
 }
 
 func randomSleep() {
-	time.Sleep(time.Duration(rand.Intn(10)+10) * time.Millisecond)
+	//time.Sleep(time.Duration(rand.Intn(10)+10) * time.Millisecond)
 }
 
 func createMap() map[string]string {
@@ -41,15 +39,19 @@ func dedicatedWorker(reqw <-chan writeRequest, reqr <-chan readRequest, stop <-c
 	}
 }
 
-func dedicated(wClients, rClients int) {
-	write := make(chan writeRequest)
-	read := make(chan readRequest)
+func dedicated(wClients, rClients, chBufSize int) {
+	write := make(chan writeRequest, chBufSize)
+	read := make(chan readRequest, chBufSize)
 	stop := make(chan struct{})
 
 	go dedicatedWorker(write, read, stop)
 
+	var wg sync.WaitGroup
+	wg.Add(wClients + rClients)
+
 	for i := 0; i < wClients; i++ {
 		go func() {
+			defer wg.Done()
 			randomSleep()
 			write <- writeRequest{
 				key:   fmt.Sprintf("key%d", i),
@@ -60,6 +62,7 @@ func dedicated(wClients, rClients int) {
 
 	for i := 0; i < rClients; i++ {
 		go func() {
+			defer wg.Done()
 			randomSleep()
 			rr := readRequest{
 				key:   fmt.Sprintf("key0"),
@@ -70,6 +73,7 @@ func dedicated(wClients, rClients int) {
 		}()
 	}
 
+	wg.Wait()
 	close(stop)
 }
 
@@ -77,8 +81,12 @@ func synchro(wClients, rClients int) {
 	m := createMap()
 	var mutex sync.Mutex
 
+	var wg sync.WaitGroup
+	wg.Add(wClients + rClients)
+
 	for i := 0; i < wClients; i++ {
 		go func() {
+			defer wg.Done()
 			randomSleep()
 			mutex.Lock()
 			defer mutex.Unlock()
@@ -88,12 +96,15 @@ func synchro(wClients, rClients int) {
 
 	for i := 0; i < rClients; i++ {
 		go func() {
+			defer wg.Done()
 			randomSleep()
 			mutex.Lock()
 			defer mutex.Unlock()
 			_ = m[fmt.Sprintf("key0")]
 		}()
 	}
+
+	wg.Wait()
 }
 
 func main() {
