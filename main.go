@@ -50,18 +50,18 @@ func dedicated(wClients, rClients, chBufSize int) {
 	wg.Add(wClients + rClients)
 
 	for i := 0; i < wClients; i++ {
-		go func() {
+		go func(n int) {
 			defer wg.Done()
 			randomSleep()
 			write <- writeRequest{
-				key:   fmt.Sprintf("key%d", i),
-				value: fmt.Sprintf("value%d", i),
+				key:   fmt.Sprintf("key%d", n),
+				value: fmt.Sprintf("value%d", n),
 			}
-		}()
+		}(i)
 	}
 
 	for i := 0; i < rClients; i++ {
-		go func() {
+		go func(n int) {
 			defer wg.Done()
 			randomSleep()
 			rr := readRequest{
@@ -70,7 +70,7 @@ func dedicated(wClients, rClients, chBufSize int) {
 			}
 			read <- rr
 			_ = <-rr.value
-		}()
+		}(i)
 	}
 
 	wg.Wait()
@@ -85,23 +85,23 @@ func synchro(wClients, rClients int) {
 	wg.Add(wClients + rClients)
 
 	for i := 0; i < wClients; i++ {
-		go func() {
+		go func(n int) {
 			defer wg.Done()
 			randomSleep()
 			mutex.Lock()
 			defer mutex.Unlock()
-			m[fmt.Sprintf("key%d", i)] = fmt.Sprintf("value%d", i)
-		}()
+			m[fmt.Sprintf("key%d", n)] = fmt.Sprintf("value%d", n)
+		}(i)
 	}
 
 	for i := 0; i < rClients; i++ {
-		go func() {
+		go func(n int) {
 			defer wg.Done()
 			randomSleep()
 			mutex.Lock()
 			defer mutex.Unlock()
 			_ = m[fmt.Sprintf("key0")]
-		}()
+		}(i)
 	}
 
 	wg.Wait()
